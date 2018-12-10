@@ -1,0 +1,162 @@
+---
+title: "Sillgrisslors vinterutbredning"
+subtitle: "Sammanfattning av arbetet 2018 samt första preliminära resultat"
+author: "Martina Kadin"
+#date: "2018-11-21"
+lang: sv
+output: 
+  pdf_document:
+    toc: false
+    latex_engine: xelatex
+    #template: ownfigcap_fromdefault.tex
+    keep_tex: true
+    includes:
+      in_header: customcaptions.tex
+      before_body: hyphenation.tex
+papersize: a4
+mainfont: Times
+fontsize: 11pt
+linkcolor: royalblue
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+  
+##Bakgrund
+###Vinterutbredning och havsplanering
+Underlag om havsfåglarnas vinterutbredning i territorialhavet är viktigt för det pågående arbetet med havsplanering, där konflikter mellan naturvärden och olika exploateringsintressen ska avgöras. Det är avgörande att få kunskap om fåglarnas storskaliga geografiska rörelsemönster och beroende av olika havsområden över året. Detta kan förtydliga vilka verksamheter som är viktigast att förvalta i respektive havsområde. Dataunderlaget är även värdefullt för forskning då inga studier av aktuella övervintringsområden finns publicerade från Östersjöregionen.
+
+###Studier med hjälp av ljusloggers
+Ljusloggers, också kallade geolocators, är dataloggers i miniatyrform. De sätts fast på en ring på fågelns ben där de mäter ljusintensitet. Ljusmätningarna tillsammans med klockslag kan sedan användas för beräkning av dagliga positioner. Latitud, dvs plats i nord-syd-riktning, beräknas med hjälp av dagslängden, medan longitud (öst-västlig riktning) bestäms utifrån när mitt på dagen inträffar. Precisionen är sämre ön i exempelvis satellit- och GPS-baserade system, men den stora fördelen med ljusloggers är att data kan lagras på ett komprimerat och batterisnålt sätt. Det möjliggör låg vikt och därmed minsta möjliga påverkan på fåglarna. En nackdel är att en logger måste fås tillbaka genom att fågeln fångas igen och loggern tas av.
+
+
+##Fältarbete 
+###Sommaren 2017
+Studien inleddes 2017 då 20 sillgrisslor på ön Kalken, i ögruppen Svenska Högarna, förseddes med ljusloggers.
+
+###Sommaren 2018
+Under häckningssäsongen 2018 förseddes ett större antal sillgrisslor med ljusloggers. I södra delen av Stockholms skärgård utrustades 30 fåglar på Storskär och 30 fåglar på Österskär. Besvärligt väder medförde att turen till kolonierna i norra delen av länet genomfördes sent på säsongen och färre fåglar fanns på plats, men 5 individer på Stridsbådan och 3 på Abborren kunde utrustas med ljusloggers.
+
+På Kalken utrustades 10 fåglar med nya ljusloggers och vi kunde plocka av loggers från 4 individer (även här medförde vädret ett sent besök. Högre återfångstfrekvens kan förväntas kommande år.). Blodprov för könsbestämning togs från dessa fyra, vilket visade att det var två honor och två hanar som studerats.
+
+
+
+
+```{r data, include=FALSE}
+#~~~~~~~~~~~~~~~~
+#Load necessary libraries
+library(TwGeos)  
+library(GeoLight)
+library(ggmap)
+library(maptools)
+
+#~~~~~~~~~~~~~~~~
+#Import data
+setwd("/Users/Martina/Documents/GitHub/Pdf_with_maps/")
+twls <- read.csv("UriaAalge_Twilights-ed_GeoL.csv") #Dataset with twilights calculated using GeoLight. The twilights were edited to remove data around the equinoxes, data when the bird is at the breeding colony (many shadowing events), and a filter was applied to delete or interpolate highly unlikely positions (e.g. far away or far inland).
+twls$tFirst <- as.POSIXct(twls$tFirst, tz="UTC"); twls$tSecond <- as.POSIXct(twls$tSecond, tz="UTC") #Making sure data are in the correct formats
+```
+
+```{r map-preps, include=FALSE}
+#~~~~~~~~~~~~~~~~
+#Calculate coordinates, based on a solar angle of -3°
+coo <-data.frame(coord(twls$tFirst,twls$tSecond,twls$type,degElevation=-3,note=TRUE))
+coo$day <- ceiling(julian(twls$tFirst, origin = as.POSIXct("2017-06-28", tz = "GMT")))
+
+#~~~~~~~~~~~~~~~~
+#Necessary for producing maps
+#Assign a base map of the Baltic Sea region
+baltic_map <- get_stamenmap(bbox = c(left = 12, bottom = 53, right =28, top = 66),
+                            zoom = 5, maptype = "watercolor", crop = TRUE, messaging = FALSE, urlonly = FALSE,
+                            color = "color", force = TRUE)
+
+#Function to remove coordinates that are completely wrong
+rm.coords <- function(x) {
+  x$lat[x$lat <= 45] <- NA; x$lat[x$lat >= 68] <- NA 
+  x$lon[x$lon <= -10] <- NA; x$lon[x$lon >= 35] <- NA
+  x <- x[is.na(x$lat)==FALSE,]
+  x <- x[is.na(x$lon)==FALSE,]
+  return(x)}
+#Running it on coordinates
+coo <- rm.coords(coo)
+
+```
+
+
+```{r maps1, echo=FALSE, results = 'hide', warning=FALSE,  out.width='33%',fig.show='hold', fig.cap='Områden som användes av sillgrisslor under perioden juli 2017 - april 2018. a. Juli - innan höstdagjämning, b. Efter höstdagjämning - innan vårdagjämning, c. April. Ju mörkare färg desto högre densitet av positioner. Observera att resultaten är preliminära och antalet analyserade individer är lågt: n = 4 (juli-okt), 3 (okt-apr).'} 
+#Note that the echo = FALSE parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+#warning=FALSE prevents inclusion of the warnings generated
+#It was necessary to save the -Rmd file with encoding windows-1252 to have the Swedish characters display correctly
+
+#Day 1:72
+ggmap(baltic_map, extent = "device") + 
+  stat_density2d(data = subset(coo, day>20 & day<73), 
+                 aes(x = lon, y = lat, fill = ..level.., alpha = ..level..), size = 0.01, 
+                 bins = 20, geom = "polygon", show.legend=FALSE) + scale_fill_gradient(low = "seagreen2", high = "seagreen4", name="Densitet") + geom_density2d(data = subset(coo, day>20 & day<73),aes(x = lon, y = lat), size = 0.3, col="seagreen4") + 
+  scale_alpha(range = c(0, 0.3), guide = FALSE) + annotate("text", x=13.5 , y=65.6, size=7,family="Times", label="a.")
+#+ ggtitle("Exempel - Uria aalge", subtitle="Juli-Sept 2017")
+
+#Day 117:237
+ggmap(baltic_map, extent = "device") +
+  stat_density2d(data = subset(coo, day>115 & day<238), 
+                 aes(x = lon, y = lat, fill = ..level.., alpha = ..level..), size = 0.01, 
+                 bins = 20, geom = "polygon", show.legend=FALSE) + scale_fill_gradient(low = "royalblue1", high = "royalblue4", name="Densitet") + geom_density2d(data = subset(coo,day>115 & day<238 ),aes(x = lon, y = lat), size = 0.3, col="royalblue4") + 
+scale_alpha(range = c(0, 0.3), guide = FALSE) + annotate("text", x=13.5 , y=65.6, size=7,family="Times", label="b.")
+#+ ggtitle("Exempel - Uria aalge", subtitle="Okt 2017 - Febr 2018")
+
+#Day 282:299
+ggmap(baltic_map, extent = "device") + 
+  stat_density2d(data = subset(coo, day>281 & day<300), 
+                 aes(x = lon, y = lat, fill = ..level.., alpha = ..level..), size = 0.01, 
+                 bins = 20, geom = "polygon", show.legend=FALSE) + scale_fill_gradient(low = "orangered1", high = "orangered3", name="Densitet") + geom_density2d(data = subset(coo, day>281 & day<300),aes(x = lon, y = lat), size = 0.3, col="orangered3") + 
+  scale_alpha(range = c(0, 0.3), guide = FALSE) + annotate("text", x=13.5 , y=65.6, size=7,family="Times", label="c.")
+#+ ggtitle("Exempel - Uria aalge", subtitle="April 2018")
+
+```
+
+##Analys och första preliminära resultat
+Av de fyra loggers som plockades av under sommaren fungerade tre under hela studietiden, medan batteriet i en logger tog slut i oktober. Ljusmätningarna behandlades i programmet R, med hjälp av analyspaketet GeoLight. Från ljusmätningarna beräknades soluppgång och nedgång, vilka sedan användes för beräkning av koordinater. Eftersom de studerade sillgrisslorna häckar i en grotta påverkas ljusmätningarna under häckningen och positioner under häckningstiden har därför exkluderats från analysen. Runt höst- och vårdagjämning, då dagarna är lika långa över hela jorden, kan inte latitud beräknas, varför positioner från dessa perioder också har exkluderats. Fig. 1 visar vilka områden de studerade fyra sillgrisslorna använder utanför häckningstiden. Resultaten bör betraktas som preliminära då det är ett litet antal analyserade fåglar och fler individer bör analyseras för att avgränsa vinterutbredningsområden för populationen. 
+
+
+##Planerad fortsättning
+Under 2019 kommer vi återfånga fåglar och plocka av loggers. Med ett större antal individer blir det möjligt att dela upp datamaterialet ytterligare, t ex beroende på kön. Skillnader mellan könen är särskilt intressant för sillgrisslor eftersom hanen tar hand om ungen efter att fåglarna lämnat kolonin och det är troligt att detta påverkar vilka områden hanar och honor uppehåller sig i. Vi kan också dela upp materialet i kortare tidsperioder för att tydligare se när olika områden är viktiga för sillgrisslor. Ett exempel på hur det skulle kunna göras ses i figur 2, där detta mindre material indikerar att samma områden kan vara viktiga under en stor del av vintern. 
+
+De loggers som använts fr o m 2018 har förutom ljussensor också en avancerad sensor för temperatur. Dessa ger temperaturmätningar med tillräcklig upplösning för att kunna jämföras med mätningar eller satellitobservationer av vattentemperatur, vilket i analysfasen kan användas för att förbättra precisionen för sillgrisslornas positioner.
+
+Under 2019 kommer ytterligare sillgrisslor i norra delen av Stockholms län att utrustas med ljusloggers.
+
+
+
+```{r maps2, echo=FALSE, results = 'hide', warning=FALSE,  out.width='33%',fig.show='hold', fig.cap='Olika uppdelningar kan göras, särskilt med ett större datamaterial, exempelvis baserat på kön. Här visas ett exempel med en uppdelning i kortare perioder. Kartorna visar områden som sillgrisslorna använde från höstdagjämning till december, respektive januari och fram till vårdagjämning, dvs samma underlag som figur 1b, men uppdelat i två perioder. Kärnområdena visar sig i detta fall vara i stort sett de samma.'} 
+
+#Day 116:192
+ggmap(baltic_map, extent = "device")  + 
+  stat_density2d(data = subset(coo, day>115 & day<193), 
+                 aes(x = lon, y = lat, fill = ..level.., alpha = ..level..), size = 0.01, 
+                 bins = 20, geom = "polygon", show.legend=FALSE) + scale_fill_gradient(low = "salmon3", high = "salmon4", name="Densitet") + geom_density2d(data = subset(coo,day>115 & day<193 ),aes(x = lon, y = lat), size = 0.3, col="salmon4")+ 
+  scale_alpha(range = c(0, 0.3), guide = FALSE) 
+#+ ggtitle("Exempel - Uria aalge", subtitle="Okt-Dec 2017")
+
+#Day 193:237
+ggmap(baltic_map, extent = "device")  + 
+  stat_density2d(data = subset(coo, day>192 & day<238), 
+                 aes(x = lon, y = lat, fill = ..level.., alpha = ..level..), size = 0.01, 
+                 bins = 20, geom = "polygon", show.legend=FALSE) + scale_fill_gradient(low = "goldenrod1", high = "goldenrod3", name="Densitet") + geom_density2d(data = subset(coo,day>192 & day<238 ),aes(x = lon, y = lat), size = 0.3, col="goldenrod3") + 
+  scale_alpha(range = c(0, 0.3), guide = FALSE) 
+#+ ggtitle("Exempel - Uria aalge", subtitle="Jan-Febr 2018")
+
+
+```
+
+
+
+##Övrig information
+Studierna har genomförts med finansiering från Havs- och Vattenmyndigheten. Erforderliga tillstånd har getts av Stockholms Djurförsöksetiska nämnd, Länsstyrelsen i Stockholm samt Naturvårdsverket. Projektet är ett samarbete mellan Naturhistoriska riksmuseet, Länsstyrelsen i Stockholm och Skärgårdsstiftelsen.
+
+###Kontakt
+Projektledare Naturhistoriska riksmuseet: Martina Kadin, e-post: 
+<martina.kadin@nrm.se>
+
+
