@@ -53,7 +53,6 @@ library(maptools)
 
 #~~~~~~~~~~~~~~~~
 #Import data
-setwd("/Users/Martina/Documents/GitHub/Pdf_with_maps/")
 twls <- read.csv("UriaAalge_Twilights-ed_GeoL.csv") #Dataset with twilights calculated using GeoLight. The twilights were edited to remove data around the equinoxes, data when the bird is at the breeding colony (many shadowing events), and a filter was applied to delete or interpolate highly unlikely positions (e.g. far away or far inland).
 twls$tFirst <- as.POSIXct(twls$tFirst, tz="UTC"); twls$tSecond <- as.POSIXct(twls$tSecond, tz="UTC") #Making sure data are in the correct formats
 ```
