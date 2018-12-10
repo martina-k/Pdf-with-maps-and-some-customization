@@ -87,7 +87,6 @@ coo <- rm.coords(coo)
 ```{r maps1, echo=FALSE, results = 'hide', warning=FALSE,  out.width='33%',fig.show='hold', fig.cap='Områden som användes av sillgrisslor under perioden juli 2017 - april 2018. a. Juli - innan höstdagjämning, b. Efter höstdagjämning - innan vårdagjämning, c. April. Ju mörkare färg desto högre densitet av positioner. Observera att resultaten är preliminära och antalet analyserade individer är lågt: n = 4 (juli-okt), 3 (okt-apr).'} 
 #Note that the echo = FALSE parameter was added to the code chunk to prevent printing of the R code that generated the plot.
 #warning=FALSE prevents inclusion of the warnings generated
-#It was necessary to save the -Rmd file with encoding windows-1252 to have the Swedish characters display correctly
 
 #Day 1:72
 ggmap(baltic_map, extent = "device") + 
